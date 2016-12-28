@@ -32,9 +32,9 @@
             for($j=0;$j -lt ($sizeResult.Index -1);$j++){
                 [void]$build.Append($line[$j])
             }
-            [String]$name=$build.ToString().Trim()
+            [String]$fileName=$build.ToString().Trim()
             $file=New-Object -TypeName psobject -Property @{
-                'Name'=$name;
+                'FileName'=$fileName;
                 'PercentComplete'=$pct;
                 'Size'=$size;
                 'Priority'=$priority;
