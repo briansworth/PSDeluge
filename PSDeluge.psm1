@@ -4,6 +4,14 @@
        # not exported #
 ##############################
 
+function ConvertToDouble ([String]$sizeStr){
+    [double]$size=-1
+    $size=Invoke-Expression `
+      -Command $sizeStr.Replace('i','').Replace(' ','') `
+      -ErrorAction SilentlyContinue
+    return $size
+}
+
 function GetFiles{
     [CmdletBinding()]
     Param(
@@ -33,8 +41,9 @@ function GetFiles{
                 $line,$sizeRegex
             )
             [string]$sizeStr=$sizeResult.Value
-            [double]$size=Invoke-Expression `
-              -Command $sizeStr.Replace('i','').Replace(' ','')
+            #[double]$size=Invoke-Expression `
+            #  -Command $sizeStr.Replace('i','').Replace(' ','')
+            [double]$size=ConvertToDouble -sizeStr $sizeStr
             [String]$priority=[Regex]::Match($line,$priorityRegex).Value
             $build=New-Object -TypeName Text.StringBuilder
             for($j=0;$j -lt ($sizeResult.Index -1);$j++){
@@ -82,7 +91,7 @@ function SplitTorrents{
 function RegexGen ([String]$rowName){
     $rowName=$rowName.Replace(' ','\s')
     $build=New-Object -TypeName Text.StringBuilder
-    [Void]$build.Append("(?<=$rowName\:\s).+")
+    [Void]$build.Append("(?<=^$rowName\:\s).+")
     return $build.ToString()
 }
 
@@ -142,6 +151,14 @@ function ParseSize {
     End{}   
 }
 
+function ParseProgress{ #I could calculate it but the work's already done
+    [CmdletBinding()]
+    Param(
+        [String]$progressStr
+    )
+    return [float]$progressStr.Split('\%')[0]
+}
+
 function ParseTorrent {
     [CmdletBinding()]
     Param(
@@ -155,6 +172,7 @@ function ParseTorrent {
         [String]$sizeRegex=RegexGen -rowName 'Size'
         [String]$seedRegex=RegexGen -rowName 'Seed time'
         [String]$trackRegex=RegexGen -rowName 'Tracker status'
+        [String]$prRegex=RegexGen -rowName 'Progress'
     }
     Process{
         [String]$n=''
@@ -163,6 +181,7 @@ function ParseTorrent {
         [String]$si=''
         [String]$st=''
         [String]$tr=''
+        [String]$pr=''
         foreach($l in $list){
             switch -Regex ($l){
                 $nRegex {
@@ -183,12 +202,16 @@ function ParseTorrent {
                 $trackRegex {
                     $tr=GetRegexMatchValue -l $l -regex $trackRegex
                 }
+                $prRegex {
+                    $pr=GetRegexMatchValue -l $l -regex $prRegex
+                }
                 default {
                     continue
                 }
             }
         }
         [PSObject]$sizeStats=ParseSize -line $si
+        $pr=ParseProgress -progressStr $pr -ErrorAction SilentlyContinue
         New-Object -TypeName psobject -Property @{
             Name=$n;
             Id=$id;
@@ -197,7 +220,8 @@ function ParseTorrent {
             Downloaded=$sizeStats.Downloaded;
             Ratio=$sizeStats.Ratio;
             SeedStats=$se;
-            Tracker=$tr
+            Tracker=$tr;
+            Progress=$pr;
             Files=GetFiles $list;
         }
     }
@@ -241,5 +265,3 @@ function Get-DelugeTorrent {
     }
     End{}
 }
-
-Get-DelugeTasks -name 'Sully  2016 720p BrRip x264 - 2HD'
