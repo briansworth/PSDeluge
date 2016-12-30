@@ -72,6 +72,7 @@ function SplitTorrents{
     [int]$newi=0
     [int]$reali=0
     [int]$lasti=$list.IndexOf(' ')
+    [void]$tcollection.Add(@('wrk','arnd'))#if 1 torrent returned, cannot be piped to ParseTorrent command.Work around for now
 
     While($lasti -ne -1){
         $newi=$list[($lasti+1)..($list.count -1)].IndexOf(' ')
@@ -85,7 +86,7 @@ function SplitTorrents{
         [void]$tcollection.Add($a)
         $lasti=$reali
     }
-    return $tcollection
+    return $null
 }
 
 function RegexGen ([String]$rowName){
@@ -240,7 +241,8 @@ function Get-DelugeTorrent {
             ValueFromPipelineByPropertyName=$true,
             ParameterSetName='Name'
         )]
-        [String]$name,
+        [AllowNull()]
+        [String]$name=$null,
 
         [Parameter(
             Position=0,
@@ -255,9 +257,14 @@ function Get-DelugeTorrent {
     }
     Process{
         Try{
-            [Collections.ArrayList]$list=deluge info -v
+            if($name -like $null){
+                [Collections.ArrayList]$list=deluge info -v
+            }else{
+                write-host 'else'
+                [Collections.ArrayList]$list=deluge info $name -v
+            }
             [Collections.ArrayList]$splitList=SplitTorrents -list $list
-            $splitList | ParseTorrent
+            $splitList[1..($splitList.Count-1)] | ParseTorrent
         }Catch{
             $e=$_
             Write-Error $e
