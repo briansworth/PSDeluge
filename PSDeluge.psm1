@@ -136,12 +136,10 @@ function ParseSize {
     Process{
         [double]$ratio=GetRegexMatchValue -l $line -regex $rRegex
         [String]$downstr=GetRegexMatchValue -l $line -regex $dnRegex
-        [double]$down=Invoke-Expression `
-          -Command $downstr.Replace('i','').Replace(' ','')
+        [double]$down=ConvertToDouble -sizeStr $downstr
 
         [String]$sizestr=GetRegexMatchValue -l $line -regex $sRegex
-        [double]$size=Invoke-Expression `
-          -Command $sizestr.Replace('i','').Replace(' ','')
+        [double]$size=ConvertToDouble -sizeStr $sizestr
 
         New-Object -TypeName psobject -Property @{
             Downloaded=$down;
@@ -213,7 +211,7 @@ function ParseTorrent {
         }
         [PSObject]$sizeStats=ParseSize -line $si
         $pr=ParseProgress -progressStr $pr -ErrorAction SilentlyContinue
-        New-Object -TypeName psobject -Property @{
+        $obj=New-Object -TypeName psobject -Property @{
             Name=$n;
             Id=$id;
             State=$st;
@@ -225,6 +223,8 @@ function ParseTorrent {
             Progress=$pr;
             Files=GetFiles $list;
         }
+        $obj.psobject.typenames.insert(0,'Brian.PSDeluge.Torrent')
+        write-output $obj
     }
     End{}
 }
