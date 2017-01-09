@@ -10,6 +10,7 @@
         <TableHeaders>
           <TableColumnHeader>
             <Label>Name</Label>
+            <Width>20</Width>
             <Alignment>left</Alignment>
           </TableColumnHeader>
           <TableColumnHeader>
@@ -24,12 +25,22 @@
           </TableColumnHeader>
           <TableColumnHeader>
             <Label>Size(M)</Label>
-            <Width>8</Width>
+            <Width>7</Width>
             <Alignment>right</Alignment>
           </TableColumnHeader>
           <TableColumnHeader>
             <Label>Percent</Label>
             <Width>8</Width>
+            <Alignment>right</Alignment>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Label>Dn</Label>
+            <Width>11</Width>
+            <Alignment>right</Alignment>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Label>Up</Label>
+            <Width>11</Width>
             <Alignment>right</Alignment>
           </TableColumnHeader>
         </TableHeaders>
@@ -50,6 +61,12 @@
               </TableColumnItem>
               <TableColumnItem>
                 <ScriptBlock>("{0:P2}" -f ($_.Progress/100))</ScriptBlock>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>Download</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>Upload</PropertyName>
               </TableColumnItem>
             </TableColumnItems>
           </TableRowEntry>

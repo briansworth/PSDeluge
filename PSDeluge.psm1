@@ -111,6 +111,46 @@ function GetRegexMatchValue {
     }
 }
 
+function ParseState {
+    [CmdletBinding()]
+    Param(
+        [String]$state
+    )
+    [String]$download='0.0 KB/s'
+    [String]$upload='0.0 KB/s'
+    [String]$status=''
+    #Positive Look behind for 'Down Speed: '
+    ## then it will match the rate in Kib,MiB,or GiB per second (/s)
+    [String]$dRegex="(?<=Down\sSpeed\:\s)[0-9]+\.[0-9]*\s(KiB|MiB|GiB)\/s"
+    #Same as above but for 'Up Speed: '
+    [String]$uRegex="(?<=Up\sSpeed\:\s)[0-9]+\.[0-9]*\s(KiB|MiB|GiB)\/s"
+    switch -Regex ($state){  
+        "^Paused" {
+            $status='Paused'
+        }
+        "^Seeding" {
+            $status='Seeding'
+            $upload=GetRegexMatchValue -l $state -regex $uRegex
+            $upload=$upload.Replace('i','')
+        }
+        "^Downloading" {
+            $status='Downloading'
+            $download=GetRegexMatchValue -l $state -regex $dRegex
+            $download=$download.Replace('i','')
+            $upload=GetRegexMatchValue -l $state -regex $uRegex
+            $upload=$upload.Replace('i','')
+        }
+        Default {
+            $status=$state
+        }
+    }
+    New-Object -TypeName PSObject -Property @{
+        State=$status;
+        Upload=$upload;
+        Download=$download;
+    }
+}
+
 function ParseSize {
     [CmdletBinding()]
     Param(
@@ -209,13 +249,16 @@ function ParseTorrent {
                 }
             }
         }
+        [PSObject]$stateStats=ParseState -state $st
         [PSObject]$sizeStats=ParseSize -line $si
         $pr=ParseProgress -progressStr $pr -ErrorAction SilentlyContinue
         $obj=New-Object -TypeName psobject -Property @{
             Name=$n;
             Id=$id;
-            State=$st;
+            State=$stateStats.State;
             Size=$sizeStats.Size;
+            Download=$stateStats.Download;
+            Upload=$stateStats.Upload;
             Downloaded=$sizeStats.Downloaded;
             Ratio=$sizeStats.Ratio;
             SeedStats=$se;
