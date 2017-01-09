@@ -257,11 +257,14 @@ function Get-DelugeTorrent {
     }
     Process{
         Try{
-            if($name -like $null){
-                [Collections.ArrayList]$list=deluge info -v
+            [Collections.ArrayList]$list=@()
+            [String]$torId=$PSBoundParameters.Values
+            Write-Debug -Message "ID: $torId"
+            if($PSCmdlet.ParameterSetName -eq 'Name' -and $name -like $null){
+                Write-Debug -Message 'Name ->  $null'
+                $list=deluge info -v
             }else{
-                write-host 'else'
-                [Collections.ArrayList]$list=deluge info $name -v
+                $list=deluge info $torId -v
             }
             [Collections.ArrayList]$splitList=SplitTorrents -list $list
             $splitList[1..($splitList.Count-1)] | ParseTorrent
